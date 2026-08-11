@@ -1,0 +1,51 @@
+import { createClient } from "@/lib/supabase/server";
+import { getAccessiblePets } from "@/lib/pets";
+import PostForm from "./PostForm";
+
+export default async function CommunityPage() {
+  const supabase = await createClient();
+  const [pets, { data: posts }] = await Promise.all([
+    getAccessiblePets(),
+    supabase
+      .from("community_posts")
+      .select("id, content, created_at, profiles(full_name), pets(name)")
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="page-title">Paw Community</h1>
+        <p className="page-subtitle">
+          Tips, questions, and wins from other pet parents on Pet Passport.
+        </p>
+      </div>
+
+      <PostForm pets={pets} />
+
+      <div className="flex flex-col gap-3">
+        {posts && posts.length > 0 ? (
+          posts.map((post) => {
+            const author = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
+            const pet = Array.isArray(post.pets) ? post.pets[0] : post.pets;
+            return (
+              <div key={post.id} className="card-compact">
+                <div className="mb-1 flex items-center gap-2 text-sm">
+                  <span className="font-medium text-stone-900">{author?.full_name ?? "Pet parent"}</span>
+                  {pet && <span className="text-stone-400">· {pet.name}</span>}
+                  <span className="text-stone-400">
+                    · {new Date(post.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="whitespace-pre-wrap text-stone-800">{post.content}</p>
+              </div>
+            );
+          })
+        ) : (
+          <div className="empty-state">No posts yet — be the first to share something.</div>
+        )}
+      </div>
+    </div>
+  );
+}
