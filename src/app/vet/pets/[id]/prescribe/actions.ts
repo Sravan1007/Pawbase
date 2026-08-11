@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { prescriptionReadyForReviewEmail, sendEmail } from "@/lib/email";
 
 export async function createPrescription(
   petId: string,
@@ -22,5 +23,19 @@ export async function createPrescription(
   });
 
   if (error) throw new Error(error.message);
+
+  const { data: pet } = await supabase.from("pets").select("name, owner_id").eq("id", petId).maybeSingle();
+  if (pet) {
+    const { data: owner } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("id", pet.owner_id)
+      .maybeSingle();
+    if (owner) {
+      const { subject, html } = prescriptionReadyForReviewEmail(pet.name, data.dose, data.schedule);
+      await sendEmail({ to: owner.email, subject, html });
+    }
+  }
+
   redirect("/vet/dashboard");
 }

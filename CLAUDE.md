@@ -19,15 +19,23 @@ Stack
   - `0003_pet_id_docshare_appointments.sql` — adds `pets.pet_code` (Universal Pet ID) + `document_shares`
   - `0004_fix_document_share_recursion.sql` — fixes an RLS recursion bug 0003 introduced (see gotcha below)
   - `0005_security_fixes.sql` — security review fixes: adds a missing `vet_bookings` SELECT policy for the vet themselves (they couldn't see their own appointments before this), and scopes all storage bucket write policies (and `documents` bucket reads) to `has_pet_access`/`document_shares`/vet status instead of "any authenticated user, any path"
-* Push notifications: not yet implemented — meal/med reminders currently require visiting the medications page; add Expo push or web push when mobile app work starts
+  - `0006_travel_checklists.sql` — adds `travel_rulesets` (backend/ops-owned reference data, seeded with 5 sample airlines/countries) + `travel_checklist_progress` (per-pet fulfillment tracking) — closes a real PRD §3.2 scope gap that had never been built
+* Email notifications: `src/lib/email.ts` wraps Resend. Two hooks in the medication chain — `createPrescription` (vet/pets/[id]/prescribe/actions.ts) emails the owner when a vet prescribes; `ownerConfirmPrescription` (pets/[id]/medications/actions.ts) emails every caretaker with `can_confirm_medication=true` once the owner confirms. Sending is best-effort (logs and swallows errors) so a failed email never blocks the actual DB write. **Sandbox limitation**: without a verified sending domain, Resend only delivers to the exact email the Resend account owner signed up with — not even `+alias` variants of it. Fine for solo dev testing, but real multi-user delivery (the actual point of this feature) needs a verified domain in Resend before it'll reach owners/caretakers who aren't that one account. Push notifications (in-app/mobile) are still not implemented at all.
 * File storage: three Supabase Storage buckets — `pet-photos`, `medication-photos` (both public read, write scoped by policy), `documents` (private, read+write scoped by policy). All three buckets use the `${pet_id}/...` path convention so storage policies can check `has_pet_access` on the first path segment — keep that convention when adding new upload code.
+* `next.config.ts` allowlists the Supabase project's hostname for `next/image` (derived from `NEXT_PUBLIC_SUPABASE_URL` at config load, not hardcoded). Without this, any `<Image src={supabaseStorageUrl}>` throws "Invalid src prop" at render time — this was a real latent bug that went unnoticed until the first prescription with a real photo actually rendered on the medications page. **Config changes here need a dev server restart** (`next dev` doesn't hot-reload `next.config.ts`) — if you add a new external image host, restart before assuming it's broken.
 * Styling: no component library — design tokens + reusable classes (`.card`, `.btn-primary`/`.btn-secondary`/`.btn-ghost`, `.input`, `.badge-*`, `.page-title`, `.empty-state`, etc.) defined once in `src/app/globals.css` under `@layer components`. Warm/minimal palette via CSS custom properties (`--accent`, `--border`, `--success`, etc.), deliberately no `prefers-color-scheme` auto dark mode.
 
 Running locally
 
-1. Create a Supabase project, run all four migrations in `supabase/migrations/` **in order** against it (see the SQL editor gotcha below before you do)
+1. Create a Supabase project, run all six migrations in `supabase/migrations/` **in order** against it (see the SQL editor gotcha below before you do)
 2. Copy `.env.local.example` to `.env.local` and fill in the project URL, anon key, and service role key
 3. `npm install && npm run dev`
+
+Testing
+
+* `npm run test:e2e` — Playwright critical-path suite (`tests/critical-paths.spec.ts`): login, pet creation + Universal Pet ID, public QR page reachable with zero auth, document upload, medications page, travel checklist. Runs against the real dev server and real Supabase project — no mocking — so it catches actual RLS/auth regressions, not just rendering bugs. `npm run test:e2e:ui` opens Playwright's UI mode for debugging.
+* Tests reuse the existing confirmed test account (`tests/helpers.ts`) rather than signing up fresh, to skip email confirmation. Each run creates a new throwaway pet (`E2E Test Pet <timestamp>`) rather than depending on a fixed pet ID — cheap to leave lying around in a dev project, don't point this at production data.
+* Gotcha hit while writing these: `page.waitForURL("**/pets/*")` also matches `/pets/new` itself (the page you start a create-pet flow on) and resolves before the real post-submit redirect happens. Use a pattern that excludes `new` explicitly, e.g. `/\/pets\/(?!new)[a-f0-9-]+$/`.
 
 Route map
 
@@ -43,6 +51,7 @@ Route map
 * `/shop` — static curated catalog + "Add to order" creates an `orders` row (type `shop`) — no real inventory/payment
 * `/community` — Paw Community feed; any authenticated user reads all posts, writes only their own (optionally tagged to a pet they have access to)
 * `/pets/[id]/documents` — document vault: upload (private bucket, signed URLs generated per view), and "Share with vet" scoped to a specific upcoming `vet_bookings` row (creates a `document_shares` row, not standing access)
+* `/pets/[id]/travel` — travel document checklist: rulesets are backend/ops-owned reference data (`travel_rulesets`, currently 5 seeded rows), owner just checks off which required documents they've handled per destination (`travel_checklist_progress`) — app never fills or submits anything
 * All four booking/ordering pages share `getAccessiblePets()` (`src/lib/pets.ts`) for the "which pet is this for" selector
 
 Role-based interface (one app, routed by role — not separate codebases)

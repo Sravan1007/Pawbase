@@ -93,6 +93,15 @@ export default async function PetDetailPage({
       </section>
 
       <section className="card">
+        <div className="flex items-center justify-between">
+          <h2 className="section-title">Travel Documents</h2>
+          <Link href={`/pets/${id}/travel`} className="text-sm font-medium text-[var(--accent)] hover:underline">
+            View checklist →
+          </Link>
+        </div>
+      </section>
+
+      <section className="card">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="section-title">Medication</h2>
           <Link href={`/pets/${id}/medications`} className="text-sm font-medium text-[var(--accent)] hover:underline">
