@@ -7,6 +7,7 @@ import { createDocument } from "./actions";
 const types = [
   { value: "vaccination", label: "Vaccination" },
   { value: "vet_record", label: "Vet record" },
+  { value: "prescription", label: "Prescription" },
   { value: "travel_doc", label: "Travel document" },
   { value: "insurance", label: "Insurance" },
 ];

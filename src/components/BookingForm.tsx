@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import type { OwnedPet } from "@/lib/pets";
 import type { VetListing } from "@/lib/vets";
+import { createPetInline } from "@/app/(app)/pets/new/actions";
+
+const commonSpecies = ["Dog", "Cat", "Bird", "Rabbit", "Other"];
 
 export default function BookingForm({
   pets,
@@ -16,9 +18,29 @@ export default function BookingForm({
   action: (formData: FormData) => Promise<void>;
   submitLabel: string;
 }) {
+  const [localPets, setLocalPets] = useState(pets);
+  const [addingPet, setAddingPet] = useState(false);
+  const [petError, setPetError] = useState<string | null>(null);
+
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleAddPet(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setAddingPet(true);
+    setPetError(null);
+    const form = e.currentTarget;
+    try {
+      const newPet = await createPetInline(new FormData(form));
+      setLocalPets((prev) => [...prev, newPet as OwnedPet]);
+      form.reset();
+    } catch (err) {
+      setPetError(err instanceof Error ? err.message : "Could not add pet");
+    } finally {
+      setAddingPet(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -36,15 +58,38 @@ export default function BookingForm({
     }
   }
 
-  if (pets.length === 0) {
+  if (localPets.length === 0) {
     return (
-      <p className="empty-state">
-        Add a pet first before booking — head to{" "}
-        <Link href="/pets/new" className="font-medium text-[var(--accent)] hover:underline">
-          Add a pet
-        </Link>
-        .
-      </p>
+      <form onSubmit={handleAddPet} className="card flex flex-col gap-4">
+        <p className="text-sm text-stone-600">
+          Add your pet to book — takes a few seconds, and you can fill in the rest later.
+        </p>
+        <label className="field-label">
+          Pet name
+          <input name="name" required placeholder="Biscuit" className="input" />
+        </label>
+        <label className="field-label">
+          Species
+          <select name="species" required defaultValue="" className="input">
+            <option value="" disabled>
+              Choose one
+            </option>
+            {commonSpecies.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field-label">
+          Breed (optional)
+          <input name="breed" placeholder="e.g. Golden Retriever" className="input" />
+        </label>
+        {petError && <p className="text-sm text-[var(--danger)]">{petError}</p>}
+        <button type="submit" disabled={addingPet} className="btn-primary self-start">
+          {addingPet ? "Adding..." : "Add pet & continue"}
+        </button>
+      </form>
     );
   }
 
@@ -53,7 +98,7 @@ export default function BookingForm({
       <label className="field-label">
         Pet
         <select name="pet_id" required className="input">
-          {pets.map((p) => (
+          {localPets.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name} ({p.species})
             </option>

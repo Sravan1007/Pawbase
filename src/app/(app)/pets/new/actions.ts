@@ -1,16 +1,12 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/server";
 import { generatePetCode } from "@/lib/petCode";
 import { randomUUID } from "crypto";
 import { redirect } from "next/navigation";
 
-export async function createPet(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+async function createPetRecord(formData: FormData) {
+  const { supabase, user } = await requireUser();
 
   const name = String(formData.get("name") ?? "").trim();
   const species = String(formData.get("species") ?? "").trim();
@@ -53,10 +49,41 @@ export async function createPet(formData: FormData) {
 
   // Every pet gets a QR emergency tag at creation — a pet should never be
   // without one, and this stays live even if the owner's plan lapses.
-  await supabase.from("qr_tags").insert({
+  const { error: qrError } = await supabase.from("qr_tags").insert({
     pet_id: petId,
     unique_slug: randomUUID(),
   });
+  if (qrError) throw new Error(qrError.message);
 
-  redirect(`/pets/${petId}`);
+  // Optional photo. Uploaded after the insert (not before) because the
+  // pet-photos bucket's write policy checks has_pet_access(petId), which
+  // requires the pets row to already exist. A file input passed straight
+  // through a <form action={...}> server action arrives as a real File —
+  // no separate client upload step needed here.
+  const photo = formData.get("photo");
+  if (photo instanceof File && photo.size > 0) {
+    const path = `${petId}/${Date.now()}-${photo.name}`;
+    const { error: uploadError } = await supabase.storage.from("pet-photos").upload(path, photo);
+    if (!uploadError) {
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("pet-photos").getPublicUrl(path);
+      await supabase.from("pets").update({ photo_url: publicUrl }).eq("id", petId);
+    }
+  }
+
+  return { id: petId, name, species };
+}
+
+export async function createPet(formData: FormData) {
+  const pet = await createPetRecord(formData);
+  redirect(`/pets/${pet.id}`);
+}
+
+// Same creation logic, but returns the new pet instead of redirecting — used
+// inline from a booking form so the caller can select the new pet and
+// finish booking in place, instead of being sent away from the flow they
+// were already in.
+export async function createPetInline(formData: FormData) {
+  return createPetRecord(formData);
 }

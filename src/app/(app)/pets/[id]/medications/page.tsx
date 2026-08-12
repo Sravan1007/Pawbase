@@ -1,7 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { one } from "@/lib/supabase/relations";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { confirmMedicationGiven, ownerConfirmPrescription } from "./actions";
+import { DueStatus } from "./DueStatus";
+import { AddDetailForm } from "./AddDetailForm";
 
 export default async function MedicationsPage({
   params,
@@ -35,7 +38,7 @@ export default async function MedicationsPage({
   const { data: reminders } = await supabase
     .from("medication_reminders")
     .select(
-      "id, dose, schedule, photo_url, owner_confirmed_at, medication_confirmations(id, confirmed_at, caretaker_id, profiles(full_name))",
+      "id, dose, schedule, photo_url, owner_photo_urls, dose_times, assigned_caretaker_id, owner_confirmed_at, medication_confirmations(id, confirmed_at, caretaker_id, profiles(full_name))",
     )
     .eq("pet_id", id)
     .order("created_at", { ascending: false });
@@ -56,6 +59,12 @@ export default async function MedicationsPage({
               caretaker_id: string;
               profiles: { full_name: string } | { full_name: string }[] | null;
             }>;
+            // Assigning the medication to one caretaker narrows who can
+            // confirm it — mirrors the RLS check in 0010, this is just the
+            // UI reflecting the same rule so the button doesn't appear for
+            // someone whose confirm would be rejected anyway.
+            const canThisUserConfirm =
+              canConfirmMedication && (!m.assigned_caretaker_id || m.assigned_caretaker_id === user.id);
 
             return (
               <div key={m.id} className="card">
@@ -72,7 +81,7 @@ export default async function MedicationsPage({
                   <div className="flex-1">
                     <p className="font-semibold text-stone-900">{m.dose}</p>
                     <p className="text-sm text-stone-500">{m.schedule}</p>
-                    <p className="mt-1 text-xs">
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                       {m.owner_confirmed_at ? (
                         <span className="badge-success">
                           Owner confirmed {new Date(m.owner_confirmed_at).toLocaleString()}
@@ -80,9 +89,25 @@ export default async function MedicationsPage({
                       ) : (
                         <span className="badge-warning">Awaiting owner review</span>
                       )}
-                    </p>
+                      {m.dose_times && m.dose_times.length > 0 && <DueStatus doseTimes={m.dose_times} />}
+                    </div>
                   </div>
                 </div>
+
+                {m.owner_photo_urls && m.owner_photo_urls.length > 0 && (
+                  <div className="mt-3 flex gap-2">
+                    {m.owner_photo_urls.map((url: string) => (
+                      <Image
+                        key={url}
+                        src={url}
+                        alt="Additional medication photo"
+                        width={56}
+                        height={56}
+                        className="h-14 w-14 rounded-lg object-cover"
+                      />
+                    ))}
+                  </div>
+                )}
 
                 {isOwner && !m.owner_confirmed_at && (
                   <form action={ownerConfirm.bind(null, m.id)} className="mt-3">
@@ -92,12 +117,18 @@ export default async function MedicationsPage({
                   </form>
                 )}
 
-                {canConfirmMedication && m.owner_confirmed_at && (
+                {canThisUserConfirm && m.owner_confirmed_at && (
                   <form action={caretakerConfirm.bind(null, m.id)} className="mt-3">
                     <button type="submit" className="btn-secondary btn-sm">
                       Confirmed given
                     </button>
                   </form>
+                )}
+
+                {isOwner && (
+                  <div className="mt-3">
+                    <AddDetailForm petId={id} reminderId={m.id} />
+                  </div>
                 )}
 
                 {confirmations.length > 0 && (
@@ -107,7 +138,7 @@ export default async function MedicationsPage({
                     </p>
                     <ul className="flex flex-col gap-1 text-sm">
                       {confirmations.map((c) => {
-                        const profile = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles;
+                        const profile = one(c.profiles);
                         return (
                           <li key={c.id} className="text-stone-600">
                             {profile?.full_name ?? "Caretaker"} —{" "}

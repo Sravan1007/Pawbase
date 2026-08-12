@@ -1,18 +1,20 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { prescriptionReadyForReviewEmail, sendEmail } from "@/lib/email";
 
 export async function createPrescription(
   petId: string,
-  data: { photoUrl: string; dose: string; schedule: string },
+  data: {
+    photoUrl: string;
+    dose: string;
+    schedule: string;
+    doseTimes: string[];
+    assignedCaretakerId: string | null;
+  },
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireUser();
 
   const { error } = await supabase.from("medication_reminders").insert({
     pet_id: petId,
@@ -20,6 +22,8 @@ export async function createPrescription(
     photo_url: data.photoUrl,
     dose: data.dose,
     schedule: data.schedule,
+    dose_times: data.doseTimes,
+    assigned_caretaker_id: data.assignedCaretakerId,
   });
 
   if (error) throw new Error(error.message);

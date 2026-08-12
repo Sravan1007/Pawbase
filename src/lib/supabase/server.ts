@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -25,4 +26,16 @@ export async function createClient() {
       },
     },
   );
+}
+
+// Shared auth-guard used by every server action and protected server
+// component: fetches the current user and redirects to /login if absent,
+// so call sites don't each hand-roll the same four lines.
+export async function requireUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+  return { supabase, user };
 }

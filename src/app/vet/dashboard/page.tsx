@@ -1,36 +1,26 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { updateBookingStatus } from "./actions";
+import { BookingsList } from "./BookingsList";
+import { lookupPetByCode } from "./actions";
+import { one } from "@/lib/supabase/relations";
 
-type Booking = {
-  id: string;
-  scheduled_at: string;
-  type: string;
-  status: string;
-  pets: { id: string; name: string; species: string } | { id: string; name: string; species: string }[] | null;
-};
-
-function isSameDay(a: Date, b: Date) {
-  return a.toDateString() === b.toDateString();
-}
-
-export default async function VetDashboardPage() {
+export default async function VetDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ lookup_error?: string }>;
+}) {
+  const { lookup_error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: vetProfile } = await supabase
-    .from("vets")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const [{ data: bookings }, { data: accessRows }] = await Promise.all([
+  const [{ data: vetProfile }, { data: bookings }, { data: accessRows }] = await Promise.all([
+    supabase.from("vets").select("id").eq("id", user.id).maybeSingle(),
     supabase
       .from("vet_bookings")
-      .select("id, scheduled_at, type, status, pets(id, name, species)")
+      .select("id, scheduled_at, type, status, meeting_url, pets(id, name, species)")
       .eq("vet_id", user.id)
       .neq("status", "cancelled")
       .order("scheduled_at", { ascending: true }),
@@ -41,68 +31,7 @@ export default async function VetDashboardPage() {
       .eq("role", "vet"),
   ]);
 
-  const today = new Date();
-  const todaysBookings = (bookings ?? []).filter((b) => isSameDay(new Date(b.scheduled_at), today));
-  const upcomingBookings = (bookings ?? []).filter((b) => !isSameDay(new Date(b.scheduled_at), today));
-
-  const patients = (accessRows ?? [])
-    .map((row) => (Array.isArray(row.pets) ? row.pets[0] : row.pets))
-    .filter(Boolean);
-
-  const confirmAction = updateBookingStatus.bind(null);
-
-  function BookingRow({ b }: { b: Booking }) {
-    const pet = Array.isArray(b.pets) ? b.pets[0] : b.pets;
-    return (
-      <div className="card-compact flex items-center justify-between gap-4">
-        <div>
-          <p className="font-medium text-stone-900">{pet?.name ?? "Pet"}</p>
-          <p className="text-sm text-stone-500">
-            {new Date(b.scheduled_at).toLocaleString(undefined, {
-              weekday: "short",
-              hour: "numeric",
-              minute: "2-digit",
-              month: "short",
-              day: "numeric",
-            })}{" "}
-            · {b.type === "virtual" ? "Video call" : "In-clinic"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span
-            className={
-              b.status === "confirmed"
-                ? "badge-success"
-                : b.status === "completed"
-                  ? "badge-neutral"
-                  : "badge-warning"
-            }
-          >
-            {b.status}
-          </span>
-          {b.status === "requested" && (
-            <form action={confirmAction.bind(null, b.id, "confirmed")}>
-              <button type="submit" className="btn-secondary btn-sm">
-                Confirm
-              </button>
-            </form>
-          )}
-          {b.status === "confirmed" && (
-            <form action={confirmAction.bind(null, b.id, "completed")}>
-              <button type="submit" className="btn-secondary btn-sm">
-                Mark done
-              </button>
-            </form>
-          )}
-          {pet && (
-            <Link href={`/vet/pets/${pet.id}/prescribe`} className="btn-ghost btn-sm">
-              Prescribe
-            </Link>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const patients = (accessRows ?? []).map((row) => one(row.pets)).filter(Boolean);
 
   return (
     <div className="flex flex-col gap-10">
@@ -120,22 +49,23 @@ export default async function VetDashboardPage() {
         </p>
       )}
 
-      <section className="flex flex-col gap-3">
-        {todaysBookings.length > 0 ? (
-          todaysBookings.map((b) => <BookingRow key={b.id} b={b as Booking} />)
-        ) : (
-          <div className="empty-state">Nothing on the books for today.</div>
-        )}
-      </section>
-
-      {upcomingBookings.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="section-title">Upcoming</h2>
-          {upcomingBookings.map((b) => (
-            <BookingRow key={b.id} b={b as Booking} />
-          ))}
-        </section>
+      <form action={lookupPetByCode} className="card-compact flex items-end gap-2">
+        <label className="field-label flex-1">
+          Look up a patient by Pet ID
+          <input name="pet_code" placeholder="PP-XXXXXX" className="input" />
+        </label>
+        <button type="submit" className="btn-secondary btn-sm">
+          Open
+        </button>
+      </form>
+      {lookup_error === "1" && (
+        <p className="text-sm text-[var(--danger)]">
+          No pet found with that ID, or you don&apos;t have access to it yet (a booking or
+          standing access is required).
+        </p>
       )}
+
+      <BookingsList bookings={bookings ?? []} />
 
       <section className="flex flex-col gap-3">
         <h2 className="section-title">Patients with standing access</h2>

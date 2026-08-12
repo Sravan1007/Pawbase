@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, requireUser } from "@/lib/supabase/server";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { SOSButton } from "@/components/SOSButton";
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
@@ -12,12 +12,24 @@ const navLinks = [
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  await requireUser();
+
+  // RLS ("pets: access via ownership or caretaker_access") already scopes
+  // this to pets the viewer can see — no extra owner/caretaker filter
+  // needed. Shown to both owner and caretaker so whoever's actually
+  // traveling with the pet sees the nearby-vet lookup.
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
+  const [{ data: travelingPets }, { data: caretakerRows }] = await Promise.all([
+    supabase.from("pets").select("id").eq("travel_mode_active", true).limit(1),
+    user
+      ? supabase.from("caretaker_access").select("id").eq("user_id", user.id).eq("role", "caretaker").limit(1)
+      : Promise.resolve({ data: null }),
+  ]);
+  const isTraveling = (travelingPets ?? []).length > 0;
+  const isCaretaker = (caretakerRows ?? []).length > 0;
 
   return (
     <div className="min-h-screen">
@@ -32,12 +44,28 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 {link.label}
               </Link>
             ))}
+            {isCaretaker && (
+              <Link href="/caretaker" className="nav-link">
+                My Tasks
+              </Link>
+            )}
+            {isTraveling && (
+              <Link href="/traveling" className="nav-link font-semibold text-[var(--accent)]">
+                ✈️ Traveling
+              </Link>
+            )}
           </nav>
-          <form action="/auth/signout" method="post">
-            <button type="submit" className="btn-ghost btn-sm">
-              Log out
-            </button>
-          </form>
+          <div className="flex items-center gap-3">
+            <SOSButton />
+            <Link href="/profile" className="nav-link">
+              Profile
+            </Link>
+            <form action="/auth/signout" method="post">
+              <button type="submit" className="btn-ghost btn-sm">
+                Log out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
       <main className="page-shell">{children}</main>

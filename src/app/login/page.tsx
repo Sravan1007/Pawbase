@@ -9,6 +9,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const justSignedUp = searchParams.get("confirm") === "1";
+  const next = searchParams.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +28,10 @@ function LoginForm() {
       setError(error.message);
       return;
     }
-    router.push("/dashboard");
+    // Only ever follow a same-site relative path — never let `next` redirect
+    // off Pet Passport.
+    const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+    router.push(safeNext);
     router.refresh();
   }
 
@@ -73,7 +77,10 @@ function LoginForm() {
       </form>
       <p className="mt-4 text-center text-sm text-stone-500">
         No account?{" "}
-        <Link href="/signup" className="font-medium text-[var(--accent)] hover:underline">
+        <Link
+          href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
+          className="font-medium text-[var(--accent)] hover:underline"
+        >
           Sign up
         </Link>
       </p>

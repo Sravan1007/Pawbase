@@ -72,11 +72,21 @@ test.describe.serial("critical paths", () => {
     await expect(page.getByText("No prescriptions yet.")).toBeVisible();
   });
 
-  test("travel checklist page loads and lists seeded rulesets", async ({ page }) => {
+  test("travel checklist page lists seeded rulesets in the selectors and shows the picked checklist", async ({ page }) => {
     await login(page);
     const petId = petUrl.split("/pets/")[1];
     await page.goto(`/pets/${petId}/travel`);
-    await expect(page.getByRole("heading", { name: "Airlines" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Destination Countries" })).toBeVisible();
+
+    // Nothing selected yet — no checklist shown.
+    await expect(page.getByText("Select an airline or destination")).toBeVisible();
+
+    const countrySelect = page.getByLabel("Destination country");
+    await expect(countrySelect.locator("option")).toContainText(["USA — Pet Import"]);
+    await countrySelect.selectOption({ label: "USA — Pet Import" });
+
+    // "USA — Pet Import" also appears as a <select> option, so scope the
+    // visible-checklist assertion to something that only exists once rendered.
+    await expect(page.getByText("Rabies vaccination certificate")).toBeVisible();
+    await expect(page.getByText("Last verified")).toBeVisible();
   });
 });

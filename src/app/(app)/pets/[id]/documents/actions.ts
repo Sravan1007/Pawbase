@@ -1,18 +1,13 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { requireUser } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function createDocument(
   petId: string,
   data: { type: string; filePath: string; expiryDate: string | null },
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireUser();
 
   const { error } = await supabase.from("documents").insert({
     pet_id: petId,
@@ -27,11 +22,7 @@ export async function createDocument(
 }
 
 export async function shareDocumentWithVet(petId: string, formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase, user } = await requireUser();
 
   const documentId = String(formData.get("document_id") ?? "");
   const bookingId = String(formData.get("booking_id") ?? "");
@@ -58,11 +49,7 @@ export async function shareDocumentWithVet(petId: string, formData: FormData) {
 }
 
 export async function revokeDocumentShare(petId: string, shareId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const { supabase } = await requireUser();
 
   const { error } = await supabase.from("document_shares").delete().eq("id", shareId);
   if (error) throw new Error(error.message);

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { one } from "@/lib/supabase/relations";
 
 export type OwnedPet = { id: string; name: string; species: string };
 
@@ -18,7 +19,7 @@ export async function getAccessiblePets(): Promise<OwnedPet[]> {
   ]);
 
   const caretakerPets = (accessRows ?? [])
-    .map((row) => (Array.isArray(row.pets) ? row.pets[0] : row.pets))
+    .map((row) => one(row.pets))
     .filter((p): p is OwnedPet => Boolean(p));
 
   const byId = new Map<string, OwnedPet>();

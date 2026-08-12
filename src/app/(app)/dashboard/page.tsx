@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { one } from "@/lib/supabase/relations";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { confirmMedicationGiven } from "../pets/[id]/medications/actions";
+import QuickDeleteButton from "../pets/[id]/QuickDeleteButton";
 
 type Pet = {
   id: string;
@@ -40,7 +42,7 @@ export default async function DashboardPage() {
   const ownedIds = new Set((ownedPets ?? []).map((p) => p.id));
   const caretakerPets = (accessRows ?? [])
     .map((row) => {
-      const pet = Array.isArray(row.pets) ? row.pets[0] : row.pets;
+      const pet = one(row.pets);
       return pet && !ownedIds.has(pet.id) ? { pet: pet as Pet, canConfirm: row.can_confirm_medication } : null;
     })
     .filter((r): r is { pet: Pet; canConfirm: boolean } => Boolean(r));
@@ -82,10 +84,16 @@ export default async function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {(ownedPets ?? []).map((pet) => (
-              <Link key={pet.id} href={`/pets/${pet.id}`} className="card-compact flex items-center gap-4 hover:border-[var(--accent)]">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-2xl">
-                  🐾
-                </div>
+              <Link key={pet.id} href={`/pets/${pet.id}`} className="card-compact relative flex items-center gap-4 hover:border-[var(--accent)]">
+                <QuickDeleteButton petId={pet.id} petName={pet.name} />
+                {pet.photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={pet.photo_url} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover" />
+                ) : (
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-2xl">
+                    🐾
+                  </div>
+                )}
                 <div className="min-w-0">
                   <p className="font-semibold text-stone-900">{pet.name}</p>
                   <p className="truncate text-sm text-stone-500">
@@ -114,9 +122,14 @@ export default async function DashboardPage() {
               return (
                 <div key={pet.id} className="card-compact flex flex-col gap-3">
                   <Link href={`/pets/${pet.id}`} className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-stone-100 text-xl">
-                      🐾
-                    </div>
+                    {pet.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={pet.photo_url} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover" />
+                    ) : (
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-stone-100 text-xl">
+                        🐾
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="font-semibold text-stone-900">{pet.name}</p>
                       <p className="truncate text-sm text-stone-500">{pet.species}</p>

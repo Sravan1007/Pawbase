@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { one } from "@/lib/supabase/relations";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import UploadForm from "./UploadForm";
@@ -7,6 +8,7 @@ import { shareDocumentWithVet, revokeDocumentShare } from "./actions";
 const typeLabels: Record<string, string> = {
   vaccination: "Vaccination",
   vet_record: "Vet record",
+  prescription: "Prescription",
   travel_doc: "Travel document",
   insurance: "Insurance",
 };
@@ -30,23 +32,28 @@ export default async function DocumentsPage({
       .order("uploaded_at", { ascending: false }),
     supabase
       .from("vet_bookings")
-      .select("id, scheduled_at, type, vets(profiles(full_name))")
+      .select("id, scheduled_at, type, vets(profiles!vets_id_fkey(full_name))")
       .eq("pet_id", id)
       .neq("status", "cancelled")
       .order("scheduled_at", { ascending: true }),
   ]);
 
   // Signed URLs — the `documents` bucket is private, so file_url is a
-  // storage path, not a public URL; resolve to a short-lived link per view.
+  // storage path, not a public URL; resolve to short-lived links in one
+  // batched call rather than one round-trip per document.
   const signedUrls = new Map<string, string>();
-  for (const doc of documents ?? []) {
-    const { data } = await supabase.storage.from("documents").createSignedUrl(doc.file_url, 300);
-    if (data?.signedUrl) signedUrls.set(doc.id, data.signedUrl);
+  if (documents && documents.length > 0) {
+    const { data: signedUrlResults } = await supabase.storage
+      .from("documents")
+      .createSignedUrls(documents.map((d) => d.file_url), 300);
+    (signedUrlResults ?? []).forEach((result, i) => {
+      if (result.signedUrl) signedUrls.set(documents[i].id, result.signedUrl);
+    });
   }
 
   const { data: shares } = await supabase
     .from("document_shares")
-    .select("id, document_id, vet_bookings(scheduled_at, vets(profiles(full_name)))")
+    .select("id, document_id, vet_bookings(scheduled_at, vets(profiles!vets_id_fkey(full_name)))")
     .in("document_id", (documents ?? []).map((d) => d.id).length > 0 ? (documents ?? []).map((d) => d.id) : ["00000000-0000-0000-0000-000000000000"]);
 
   const sharesByDoc = new Map<string, typeof shares>();
@@ -101,9 +108,9 @@ export default async function DocumentsPage({
                 {docShares.length > 0 && (
                   <ul className="flex flex-col gap-1">
                     {docShares.map((s) => {
-                      const booking = Array.isArray(s.vet_bookings) ? s.vet_bookings[0] : s.vet_bookings;
-                      const vet = booking ? (Array.isArray(booking.vets) ? booking.vets[0] : booking.vets) : null;
-                      const vetProfile = vet ? (Array.isArray(vet.profiles) ? vet.profiles[0] : vet.profiles) : null;
+                      const booking = one(s.vet_bookings);
+                      const vet = booking ? one(booking.vets) : null;
+                      const vetProfile = vet ? one(vet.profiles) : null;
                       return (
                         <li key={s.id} className="flex items-center justify-between text-xs text-stone-500">
                           <span>
@@ -127,8 +134,8 @@ export default async function DocumentsPage({
                     <select name="booking_id" required className="input mt-0 flex-1 text-xs">
                       <option value="">Share with vet for...</option>
                       {bookings.map((b) => {
-                        const vet = Array.isArray(b.vets) ? b.vets[0] : b.vets;
-                        const vetProfile = vet ? (Array.isArray(vet.profiles) ? vet.profiles[0] : vet.profiles) : null;
+                        const vet = one(b.vets);
+                        const vetProfile = vet ? one(vet.profiles) : null;
                         return (
                           <option key={b.id} value={b.id}>
                             {vetProfile?.full_name ?? "Vet"} · {new Date(b.scheduled_at).toLocaleDateString()} ({b.type})

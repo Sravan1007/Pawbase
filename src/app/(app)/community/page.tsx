@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAccessiblePets } from "@/lib/pets";
+import { one } from "@/lib/supabase/relations";
 import PostForm from "./PostForm";
 
 export default async function CommunityPage() {
@@ -27,8 +28,8 @@ export default async function CommunityPage() {
       <div className="flex flex-col gap-3">
         {posts && posts.length > 0 ? (
           posts.map((post) => {
-            const author = Array.isArray(post.profiles) ? post.profiles[0] : post.profiles;
-            const pet = Array.isArray(post.pets) ? post.pets[0] : post.pets;
+            const author = one(post.profiles);
+            const pet = one(post.pets);
             return (
               <div key={post.id} className="card-compact">
                 <div className="mb-1 flex items-center gap-2 text-sm">

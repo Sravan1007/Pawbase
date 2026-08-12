@@ -2,11 +2,14 @@
 
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
+  const safeNext = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,13 +42,16 @@ export default function SignupPage() {
     if (data.session) {
       // A caretaker joining someone else's pet has nothing to onboard yet —
       // send them straight to the dashboard, which they'll see is empty
-      // until an owner invites them.
-      router.push(joiningAsCaretaker ? "/dashboard" : "/pets/new?onboarding=1");
+      // until an owner invites them. Someone who arrived via a "Book" CTA
+      // (safeNext set) goes straight back to finish booking — that flow
+      // creates the pet inline, so the separate onboarding detour would be
+      // redundant.
+      router.push(safeNext ?? (joiningAsCaretaker ? "/dashboard" : "/pets/new?onboarding=1"));
       router.refresh();
       return;
     }
 
-    router.push("/login?confirm=1");
+    router.push(safeNext ? `/login?confirm=1&next=${encodeURIComponent(safeNext)}` : "/login?confirm=1");
   }
 
   return (
@@ -107,11 +113,22 @@ export default function SignupPage() {
         </form>
         <p className="mt-4 text-center text-sm text-stone-500">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-[var(--accent)] hover:underline">
+          <Link
+            href={safeNext ? `/login?next=${encodeURIComponent(safeNext)}` : "/login"}
+            className="font-medium text-[var(--accent)] hover:underline"
+          >
             Log in
           </Link>
         </p>
       </div>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
   );
 }

@@ -50,6 +50,15 @@ export default async function NewPetPage({
           <input name="dob" type="date" className="input" />
         </label>
         <label className="field-label">
+          Photo (optional)
+          <input
+            name="photo"
+            type="file"
+            accept="image/*"
+            className="mt-1 block w-full text-sm text-stone-600"
+          />
+        </label>
+        <label className="field-label">
           Critical medical info (allergies, conditions)
           <textarea
             name="medical_notes"

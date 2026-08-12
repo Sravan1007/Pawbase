@@ -4,10 +4,18 @@ import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import { createPrescription } from "./actions";
 
-export default function PrescribeForm({ petId }: { petId: string }) {
+export default function PrescribeForm({
+  petId,
+  caretakers,
+}: {
+  petId: string;
+  caretakers: { id: string; label: string }[];
+}) {
   const [photo, setPhoto] = useState<File | null>(null);
   const [dose, setDose] = useState("");
   const [schedule, setSchedule] = useState("");
+  const [doseTimes, setDoseTimes] = useState("");
+  const [assignedCaretakerId, setAssignedCaretakerId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -32,7 +40,16 @@ export default function PrescribeForm({ petId }: { petId: string }) {
         data: { publicUrl },
       } = supabase.storage.from("medication-photos").getPublicUrl(path);
 
-      await createPrescription(petId, { photoUrl: publicUrl, dose, schedule });
+      await createPrescription(petId, {
+        photoUrl: publicUrl,
+        dose,
+        schedule,
+        doseTimes: doseTimes
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+        assignedCaretakerId: assignedCaretakerId || null,
+      });
     } catch (err) {
       setSubmitting(false);
       setError(err instanceof Error ? err.message : "Could not save prescription");
@@ -71,6 +88,32 @@ export default function PrescribeForm({ petId }: { petId: string }) {
           className="input"
         />
       </label>
+      <label className="field-label">
+        Dose times (comma-separated, 24h — optional)
+        <input
+          placeholder="e.g. 08:00, 20:00"
+          value={doseTimes}
+          onChange={(e) => setDoseTimes(e.target.value)}
+          className="input"
+        />
+      </label>
+      {caretakers.length > 0 && (
+        <label className="field-label">
+          Assign to a caretaker (optional — leaves it open to any caretaker if unset)
+          <select
+            value={assignedCaretakerId}
+            onChange={(e) => setAssignedCaretakerId(e.target.value)}
+            className="input"
+          >
+            <option value="">Any caretaker</option>
+            {caretakers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
       <button type="submit" disabled={submitting} className="btn-primary self-start">
         {submitting ? "Saving..." : "Send to owner for review"}

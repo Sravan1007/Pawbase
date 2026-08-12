@@ -44,6 +44,26 @@ export function prescriptionReadyForReviewEmail(petName: string, dose: string, s
   };
 }
 
+export function sosAlertEmail(senderName: string, sentAt: string) {
+  return {
+    subject: `Emergency alert from ${senderName} on Pet Passport`,
+    html: `
+      <p><strong>${senderName}</strong> just triggered an emergency SOS alert on Pet Passport at ${sentAt}.</p>
+      <p>You're listed as their emergency contact — please try to reach them directly.</p>
+    `,
+  };
+}
+
+export function petFoundNotificationEmail(petName: string, finderContact: string | null) {
+  return {
+    subject: `Someone scanned ${petName}'s QR tag`,
+    html: `
+      <p>Someone just scanned <strong>${petName}</strong>'s emergency QR tag and tapped "Notify owner."</p>
+      ${finderContact ? `<p><strong>They left this contact info:</strong> ${finderContact}</p>` : `<p>They didn't leave contact info — they may call the number on the tag directly.</p>`}
+    `,
+  };
+}
+
 export function medicationConfirmedEmail(petName: string, dose: string, schedule: string) {
   return {
     subject: `${petName}'s medication is ready to administer`,
