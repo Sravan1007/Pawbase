@@ -1,11 +1,12 @@
 import { getAccessiblePets } from "@/lib/pets";
 import ShopCatalog from "./ShopCatalog";
+import Reveal from "@/components/motion/Reveal";
 
 export default async function ShopPage() {
   const pets = await getAccessiblePets();
 
   return (
-    <div className="flex flex-col gap-6">
+    <Reveal className="flex flex-col gap-6">
       <div>
         <h1 className="page-title">Pet Shopping</h1>
         <p className="page-subtitle">
@@ -13,6 +14,6 @@ export default async function ShopPage() {
         </p>
       </div>
       <ShopCatalog pets={pets} />
-    </div>
+    </Reveal>
   );
 }

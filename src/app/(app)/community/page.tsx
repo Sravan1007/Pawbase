@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getAccessiblePets } from "@/lib/pets";
 import { one } from "@/lib/supabase/relations";
 import PostForm from "./PostForm";
+import Reveal from "@/components/motion/Reveal";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 export default async function CommunityPage() {
   const supabase = await createClient();
@@ -15,7 +17,7 @@ export default async function CommunityPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <Reveal className="flex flex-col gap-6">
       <div>
         <h1 className="page-title">Paw Community</h1>
         <p className="page-subtitle">
@@ -25,7 +27,7 @@ export default async function CommunityPage() {
 
       <PostForm pets={pets} />
 
-      <div className="flex flex-col gap-3">
+      <StaggerGrid className="flex flex-col gap-3">
         {posts && posts.length > 0 ? (
           posts.map((post) => {
             const author = one(post.profiles);
@@ -46,7 +48,7 @@ export default async function CommunityPage() {
         ) : (
           <div className="empty-state">No posts yet — be the first to share something.</div>
         )}
-      </div>
-    </div>
+      </StaggerGrid>
+    </Reveal>
   );
 }

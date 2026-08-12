@@ -2,6 +2,8 @@ import { getAccessiblePets } from "@/lib/pets";
 import { getVetListings } from "@/lib/vets";
 import BookingForm from "@/components/BookingForm";
 import { bookConsultation } from "./actions";
+import Reveal from "@/components/motion/Reveal";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 const services = [
   { title: "Regular Health Check-Up", desc: "Routine wellness exam to catch issues early." },
@@ -17,7 +19,7 @@ export default async function ConsultationPage() {
   const action = bookConsultation.bind(null, "in_person");
 
   return (
-    <div className="flex flex-col gap-8">
+    <Reveal className="flex flex-col gap-8">
       <div>
         <h1 className="page-title">Vet Consultation</h1>
         <p className="page-subtitle">
@@ -26,19 +28,19 @@ export default async function ConsultationPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <StaggerGrid className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {services.map((s) => (
           <div key={s.title} className="card-compact">
             <p className="font-semibold text-stone-900">{s.title}</p>
             <p className="mt-1 text-sm text-stone-500">{s.desc}</p>
           </div>
         ))}
-      </div>
+      </StaggerGrid>
 
       <section>
         <h2 className="section-title mb-4">Book a consultation</h2>
         <BookingForm pets={pets} vets={vets} action={action} submitLabel="Request appointment" />
       </section>
-    </div>
+    </Reveal>
   );
 }

@@ -3,6 +3,8 @@ import { getAccessiblePets } from "@/lib/pets";
 import { getVetListings } from "@/lib/vets";
 import BookingForm from "@/components/BookingForm";
 import { bookConsultation } from "../consultation/actions";
+import Reveal from "@/components/motion/Reveal";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 const benefits = [
   { title: "No travel, no waiting room", desc: "Talk to a vet from wherever your pet is calmest." },
@@ -16,7 +18,7 @@ export default async function VirtualConsultationPage() {
   const action = bookConsultation.bind(null, "virtual");
 
   return (
-    <div className="flex flex-col gap-8">
+    <Reveal className="flex flex-col gap-8">
       <div>
         <h1 className="page-title">Virtual Vet Consultation</h1>
         <p className="page-subtitle">
@@ -25,14 +27,14 @@ export default async function VirtualConsultationPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <StaggerGrid className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {benefits.map((b) => (
           <div key={b.title} className="card-compact">
             <p className="font-semibold text-stone-900">{b.title}</p>
             <p className="mt-1 text-sm text-stone-500">{b.desc}</p>
           </div>
         ))}
-      </div>
+      </StaggerGrid>
 
       <p className="rounded-xl bg-[var(--warning-soft)] p-4 text-sm text-[var(--warning)]">
         Not a substitute for emergency or in-person care. If your pet is in acute distress, book
@@ -47,6 +49,6 @@ export default async function VirtualConsultationPage() {
         <h2 className="section-title mb-4">Book a video call</h2>
         <BookingForm pets={pets} vets={vets} action={action} submitLabel="Request video call" />
       </section>
-    </div>
+    </Reveal>
   );
 }

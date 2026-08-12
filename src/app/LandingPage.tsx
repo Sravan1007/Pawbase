@@ -1,4 +1,8 @@
 import Link from "next/link";
+import NotifySignup from "@/components/NotifySignup";
+import ScrollHeader from "@/components/ScrollHeader";
+import Reveal from "@/components/motion/Reveal";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 const features = [
   {
@@ -30,19 +34,19 @@ const features = [
 export default function LandingPage() {
   return (
     <main className="flex min-h-screen flex-col">
-      <header className="border-b border-[var(--border)] px-5 py-4 sm:px-8">
+      <ScrollHeader className="header-dark sticky top-0 z-10 bg-[var(--ink)]">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <span className="flex items-center gap-1.5 text-lg font-bold text-stone-900">
+          <span className="flex items-center gap-1.5 text-lg font-bold text-stone-900" style={{ fontFamily: "var(--font-heading)" }}>
             🐾 Pet Passport
           </span>
-          <nav className="flex items-center gap-4 text-sm">
-            <Link href="/clinics" className="text-stone-600 hover:text-stone-900">
+          <nav className="flex items-center gap-1 text-sm">
+            <Link href="/clinics" className="nav-link">
               Clinics
             </Link>
-            <Link href="/spa" className="text-stone-600 hover:text-stone-900">
+            <Link href="/spa" className="nav-link">
               Grooming
             </Link>
-            <Link href="/login" className="text-stone-600 hover:text-stone-900">
+            <Link href="/login" className="nav-link">
               Log in
             </Link>
             <Link href="/signup" className="btn-primary btn-sm">
@@ -50,11 +54,14 @@ export default function LandingPage() {
             </Link>
           </nav>
         </div>
-      </header>
+      </ScrollHeader>
 
-      <section className="mx-auto flex max-w-3xl flex-col items-center gap-4 px-5 py-20 text-center sm:px-8">
-        <h1 className="text-4xl font-bold text-stone-900 sm:text-5xl">
-          One hub for everything your pet needs
+      <Reveal className="mx-auto flex max-w-3xl flex-col items-center gap-4 px-5 py-20 text-center sm:px-8">
+        <h1
+          className="text-4xl font-bold text-stone-900 sm:text-5xl"
+          style={{ fontFamily: "var(--font-heading)" }}
+        >
+          One hub for <em className="italic text-[var(--accent)]">everything</em> your pet needs
         </h1>
         <p className="max-w-xl text-lg text-stone-500">
           Documents, vet care, daily routines, and an emergency tag that always works — for
@@ -68,16 +75,22 @@ export default function LandingPage() {
             Browse clinics
           </Link>
         </div>
-      </section>
+      </Reveal>
 
-      <section className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-4 px-5 pb-24 sm:grid-cols-2 sm:px-8 lg:grid-cols-3">
+      <StaggerGrid className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-4 px-5 pb-24 sm:grid-cols-2 sm:px-8 lg:grid-cols-3">
         {features.map((f) => (
           <div key={f.title} className="card-compact">
             <p className="font-semibold text-stone-900">{f.title}</p>
             <p className="mt-1 text-sm text-stone-500">{f.desc}</p>
           </div>
         ))}
-      </section>
+      </StaggerGrid>
+
+      <Reveal className="mx-auto flex w-full max-w-3xl flex-col items-center gap-3 px-5 pb-24 text-center sm:px-8">
+        <p className="font-semibold text-stone-900">Not ready to sign up yet?</p>
+        <p className="text-sm text-stone-500">Get an email when we ship something new.</p>
+        <NotifySignup />
+      </Reveal>
     </main>
   );
 }

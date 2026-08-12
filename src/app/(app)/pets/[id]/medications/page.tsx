@@ -5,6 +5,8 @@ import Image from "next/image";
 import { confirmMedicationGiven, ownerConfirmPrescription } from "./actions";
 import { DueStatus } from "./DueStatus";
 import { AddDetailForm } from "./AddDetailForm";
+import Reveal from "@/components/motion/Reveal";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 export default async function MedicationsPage({
   params,
@@ -47,11 +49,11 @@ export default async function MedicationsPage({
   const caretakerConfirm = confirmMedicationGiven.bind(null, id);
 
   return (
-    <div className="flex flex-col gap-6">
+    <Reveal className="flex flex-col gap-6">
       <h1 className="page-title">{pet.name}&apos;s medication</h1>
 
       {reminders && reminders.length > 0 ? (
-        <div className="flex flex-col gap-4">
+        <StaggerGrid className="flex flex-col gap-4">
           {reminders.map((m) => {
             const confirmations = (m.medication_confirmations ?? []) as Array<{
               id: string;
@@ -152,12 +154,12 @@ export default async function MedicationsPage({
               </div>
             );
           })}
-        </div>
+        </StaggerGrid>
       ) : (
         <div className="empty-state">
           No prescriptions yet. A vet needs to add one from the doctor portal.
         </div>
       )}
-    </div>
+    </Reveal>
   );
 }

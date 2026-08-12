@@ -1,6 +1,7 @@
 import { createClient, requireUser } from "@/lib/supabase/server";
 import Link from "next/link";
 import { SOSButton } from "@/components/SOSButton";
+import ScrollHeader from "@/components/ScrollHeader";
 
 const navLinks = [
   { href: "/dashboard", label: "Dashboard" },
@@ -33,9 +34,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-8">
-          <Link href="/dashboard" className="flex items-center gap-1.5 text-lg font-bold text-stone-900">
+      <ScrollHeader className="header-dark sticky top-0 z-10 bg-[var(--ink)]">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 sm:px-8">
+          <Link href="/dashboard" className="flex items-center gap-1.5 text-lg font-bold text-stone-900" style={{ fontFamily: "var(--font-heading)" }}>
             🐾 Pet Passport
           </Link>
           <nav className="flex flex-wrap items-center gap-1">
@@ -67,7 +68,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </form>
           </div>
         </div>
-      </header>
+      </ScrollHeader>
       <main className="page-shell">{children}</main>
     </div>
   );

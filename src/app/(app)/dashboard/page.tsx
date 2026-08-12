@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { confirmMedicationGiven } from "../pets/[id]/medications/actions";
 import QuickDeleteButton from "../pets/[id]/QuickDeleteButton";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 type Pet = {
   id: string;
@@ -82,7 +83,7 @@ export default async function DashboardPage() {
         {(ownedPets ?? []).length === 0 ? (
           <div className="empty-state">No pets yet — add your first one.</div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <StaggerGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {(ownedPets ?? []).map((pet) => (
               <Link key={pet.id} href={`/pets/${pet.id}`} className="card-compact relative flex items-center gap-4 hover:border-[var(--accent)]">
                 <QuickDeleteButton petId={pet.id} petName={pet.name} />
@@ -105,7 +106,7 @@ export default async function DashboardPage() {
                 </div>
               </Link>
             ))}
-          </div>
+          </StaggerGrid>
         )}
       </section>
 
@@ -115,7 +116,7 @@ export default async function DashboardPage() {
             <h2 className="section-title">Pets you care for</h2>
             <p className="text-sm text-stone-500">Today&apos;s medication — tap to confirm once given.</p>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <StaggerGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {caretakerPets.map(({ pet, canConfirm }) => {
               const items = careByPet.get(pet.id) ?? [];
               const confirmAction = confirmMedicationGiven.bind(null, pet.id);
@@ -158,7 +159,7 @@ export default async function DashboardPage() {
                 </div>
               );
             })}
-          </div>
+          </StaggerGrid>
         </section>
       )}
     </div>

@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getVetListing } from "@/lib/vets";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Reveal from "@/components/motion/Reveal";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 export default async function ClinicDetailPage({
   params,
@@ -45,7 +47,7 @@ export default async function ClinicDetailPage({
       </header>
 
       <main className="page-shell">
-        <div className="mx-auto flex max-w-2xl flex-col gap-8">
+        <Reveal className="mx-auto flex max-w-2xl flex-col gap-8">
           <div className="flex items-center gap-4">
             {vet.photo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -98,12 +100,12 @@ export default async function ClinicDetailPage({
           )}
 
           {vet.clinic_photos.length > 0 && (
-            <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <StaggerGrid className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {vet.clinic_photos.map((url) => (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img key={url} src={url} alt="Clinic" className="aspect-square w-full rounded-lg object-cover" />
               ))}
-            </section>
+            </StaggerGrid>
           )}
 
           <section className="card">
@@ -142,7 +144,7 @@ export default async function ClinicDetailPage({
               </a>
             )}
           </div>
-        </div>
+        </Reveal>
       </main>
     </div>
   );

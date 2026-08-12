@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getVetListings } from "@/lib/vets";
 import { redirect } from "next/navigation";
 import { NearbyVets } from "./NearbyVets";
+import Reveal from "@/components/motion/Reveal";
 
 export default async function TravelingPage() {
   const supabase = await createClient();
@@ -20,7 +21,7 @@ export default async function TravelingPage() {
   const vetsWithLocation = vets.filter((v) => v.lat != null && v.lng != null);
 
   return (
-    <div className="flex flex-col gap-8">
+    <Reveal className="flex flex-col gap-8">
       <div>
         <h1 className="page-title">✈️ Traveling</h1>
         <p className="page-subtitle">
@@ -40,6 +41,6 @@ export default async function TravelingPage() {
         Grooming and pet-supply shops nearby are coming in a future update — for now this covers
         vet clinics only.
       </p>
-    </div>
+    </Reveal>
   );
 }

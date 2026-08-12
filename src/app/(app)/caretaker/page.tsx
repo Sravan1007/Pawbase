@@ -6,6 +6,8 @@ import { confirmMedicationGiven } from "../pets/[id]/medications/actions";
 import { DueStatus } from "../pets/[id]/medications/DueStatus";
 import { RoutineList } from "../pets/[id]/routine/RoutineList";
 import { MessageOwnerForm } from "./MessageOwnerForm";
+import Reveal from "@/components/motion/Reveal";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 export default async function CaretakerPage() {
   const supabase = await createClient();
@@ -66,7 +68,7 @@ export default async function CaretakerPage() {
   });
 
   return (
-    <div className="flex flex-col gap-10">
+    <Reveal className="flex flex-col gap-10">
       <div>
         <h1 className="page-title">Your caretaker tasks</h1>
         <p className="page-subtitle">
@@ -76,6 +78,7 @@ export default async function CaretakerPage() {
         </p>
       </div>
 
+      <StaggerGrid className="flex flex-col gap-10">
       {pets.map(({ pet, canConfirm }) => {
         const petReminders = (remindersByPet.get(pet.id) ?? []).filter(
           (r) => !r.assigned_caretaker_id || r.assigned_caretaker_id === user.id,
@@ -144,6 +147,7 @@ export default async function CaretakerPage() {
           </section>
         );
       })}
-    </div>
+      </StaggerGrid>
+    </Reveal>
   );
 }

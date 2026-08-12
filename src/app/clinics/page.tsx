@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getVetListings } from "@/lib/vets";
 import Link from "next/link";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 export default async function ClinicsPage() {
   const supabase = await createClient();
@@ -49,7 +50,7 @@ export default async function ClinicsPage() {
           {vets.length === 0 ? (
             <div className="empty-state">No clinics onboarded yet — check back soon.</div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <StaggerGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {vets.map((v) => (
                 <Link
                   key={v.id}
@@ -85,7 +86,7 @@ export default async function ClinicsPage() {
                   )}
                 </Link>
               ))}
-            </div>
+            </StaggerGrid>
           )}
 
           <Link href={bookHref} className="btn-primary self-start">

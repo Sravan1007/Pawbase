@@ -4,6 +4,7 @@ import Link from "next/link";
 import ChecklistCard from "./ChecklistCard";
 import TravelSelector from "./TravelSelector";
 import TravelModeToggle from "./TravelModeToggle";
+import Reveal from "@/components/motion/Reveal";
 
 export default async function TravelPage({
   params,
@@ -71,7 +72,7 @@ export default async function TravelPage({
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <Reveal className="flex flex-col gap-8">
       <div>
         <Link href={`/pets/${id}`} className="text-sm text-[var(--accent)] hover:underline">
           ← {pet.name}
@@ -119,6 +120,6 @@ export default async function TravelPage({
       {(rulesets ?? []).length === 0 && (
         <div className="empty-state">No travel rulesets available yet.</div>
       )}
-    </div>
+    </Reveal>
   );
 }

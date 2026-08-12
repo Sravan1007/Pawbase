@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { updateBookingStatus, setMeetingLink } from "./actions";
 import { one } from "@/lib/supabase/relations";
 
@@ -68,22 +68,43 @@ function MeetingLinkControl({ bookingId, meetingUrl }: { bookingId: string; meet
   );
 }
 
+// Formatted with the vet's own locale/timezone, which the server can't know
+// at SSR time — starts as a neutral placeholder on both server and client
+// and fills in after mount, to avoid a hydration mismatch (same pattern as
+// DueStatus.tsx / NearbyVets.tsx).
+function useFormattedTime(scheduledAt: string) {
+  const [formatted, setFormatted] = useState("...");
+
+  useEffect(() => {
+    // Deferred to a callback (not called synchronously in the effect body)
+    // to satisfy react-hooks/set-state-in-effect.
+    const timer = setTimeout(() => {
+      setFormatted(
+        new Date(scheduledAt).toLocaleString(undefined, {
+          weekday: "short",
+          hour: "numeric",
+          minute: "2-digit",
+          month: "short",
+          day: "numeric",
+        }),
+      );
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [scheduledAt]);
+
+  return formatted;
+}
+
 function BookingRow({ b }: { b: Booking }) {
   const pet = one(b.pets);
+  const formattedTime = useFormattedTime(b.scheduled_at);
   return (
     <div className="card-compact flex flex-col gap-2">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="font-medium text-stone-900">{pet?.name ?? "Pet"}</p>
           <p className="text-sm text-stone-500">
-            {new Date(b.scheduled_at).toLocaleString(undefined, {
-              weekday: "short",
-              hour: "numeric",
-              minute: "2-digit",
-              month: "short",
-              day: "numeric",
-            })}{" "}
-            · {b.type === "virtual" ? "Video call" : "In-clinic"}
+            {formattedTime} · {b.type === "virtual" ? "Video call" : "In-clinic"}
           </p>
         </div>
         <div className="flex items-center gap-2">

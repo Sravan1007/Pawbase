@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { RoutineList } from "./RoutineList";
 import { addRoutine } from "./actions";
+import Reveal from "@/components/motion/Reveal";
 
 export default async function RoutinePage({
   params,
@@ -32,7 +33,7 @@ export default async function RoutinePage({
   const addRoutineAction = addRoutine.bind(null, id);
 
   return (
-    <div className="flex flex-col gap-8">
+    <Reveal className="flex flex-col gap-8">
       <div>
         <Link href={`/pets/${id}`} className="text-sm text-[var(--accent)] hover:underline">
           ← {pet.name}
@@ -65,6 +66,6 @@ export default async function RoutinePage({
           </button>
         </form>
       </section>
-    </div>
+    </Reveal>
   );
 }

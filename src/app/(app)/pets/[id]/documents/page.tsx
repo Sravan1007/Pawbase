@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import UploadForm from "./UploadForm";
 import { shareDocumentWithVet, revokeDocumentShare } from "./actions";
+import Reveal from "@/components/motion/Reveal";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 const typeLabels: Record<string, string> = {
   vaccination: "Vaccination",
@@ -64,7 +66,7 @@ export default async function DocumentsPage({
   });
 
   return (
-    <div className="flex flex-col gap-8">
+    <Reveal className="flex flex-col gap-8">
       <div>
         <Link href={`/pets/${id}`} className="text-sm text-[var(--accent)] hover:underline">
           ← {pet.name}
@@ -78,7 +80,7 @@ export default async function DocumentsPage({
 
       <UploadForm petId={id} />
 
-      <section className="flex flex-col gap-3">
+      <StaggerGrid className="flex flex-col gap-3">
         {documents && documents.length > 0 ? (
           documents.map((doc) => {
             const docShares = sharesByDoc.get(doc.id) ?? [];
@@ -154,7 +156,7 @@ export default async function DocumentsPage({
         ) : (
           <div className="empty-state">No documents uploaded yet.</div>
         )}
-      </section>
-    </div>
+      </StaggerGrid>
+    </Reveal>
   );
 }

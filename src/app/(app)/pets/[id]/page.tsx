@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import CopyCodeButton from "./CopyCodeButton";
 import DeletePetButton from "./DeletePetButton";
 import { QrCodeCard } from "./QrCodeCard";
+import Reveal from "@/components/motion/Reveal";
 
 export default async function PetDetailPage({
   params,
@@ -73,7 +74,7 @@ export default async function PetDetailPage({
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <Reveal className="flex flex-col gap-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           {pet.photo_url ? (
@@ -302,6 +303,6 @@ export default async function PetDetailPage({
           <p className="whitespace-pre-wrap text-stone-800">{pet.medical_notes}</p>
         </section>
       )}
-    </div>
+    </Reveal>
   );
 }

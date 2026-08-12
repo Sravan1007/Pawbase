@@ -3,6 +3,7 @@ import { one } from "@/lib/supabase/relations";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { VisitNoteForm } from "./VisitNoteForm";
+import Reveal from "@/components/motion/Reveal";
 
 const typeLabels: Record<string, string> = {
   vaccination: "Vaccination",
@@ -71,7 +72,7 @@ export default async function PatientHistoryPage({
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8">
+    <Reveal className="mx-auto flex max-w-2xl flex-col gap-8">
       <div>
         <h1 className="page-title">{pet.name}&apos;s history</h1>
         <p className="page-subtitle">
@@ -186,6 +187,6 @@ export default async function PatientHistoryPage({
       <Link href={`/vet/pets/${id}/prescribe`} className="btn-primary self-start">
         Prescribe medication
       </Link>
-    </div>
+    </Reveal>
   );
 }

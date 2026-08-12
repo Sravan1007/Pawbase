@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { tiers } from "@/app/(app)/grooming/tiers";
 import Link from "next/link";
+import StaggerGrid from "@/components/motion/StaggerGrid";
 
 export default async function PublicSpaPage() {
   const supabase = await createClient();
@@ -44,7 +45,7 @@ export default async function PublicSpaPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <StaggerGrid className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {tiers.map((t) => (
               <div key={t.id} className="card-compact">
                 <div className="flex items-baseline justify-between">
@@ -54,7 +55,7 @@ export default async function PublicSpaPage() {
                 <p className="mt-1 text-sm text-stone-500">{t.desc}</p>
               </div>
             ))}
-          </div>
+          </StaggerGrid>
 
           <Link href={bookHref} className="btn-primary self-start">
             Book grooming
